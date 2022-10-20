@@ -1,0 +1,95 @@
+# docker-cli
+
+https://github.com/docker/cli
+
+```bash
+git remote add upstream git@github.com:docker/cli.git
+
+git fetch upstream
+
+git merge v20.10.19
+```
+
+## build
+
+```bash
+# 使用alpine进行跨架构编译
+docker run -it \
+--rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+-e VERSION=20.10.19-beagle \
+-e PLATFORM="Beagle Cloud Team 2018-2022" \
+registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-alpine \
+bash .beagle/alpine.sh
+
+# 不使用bullseye，这个版本使用glibc无法干掉第三方依赖引用的glibc库
+# 服务器使用此docker-cli必须要升级glibc，否则会出bug
+docker run -it \
+--rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+-e VERSION=20.10.19-beagle \
+-e PLATFORM="Beagle Cloud Team 2018-2022" \
+registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-bullseye \
+bash .beagle/bullseye.sh
+```
+
+## test
+
+```bash
+# amd64
+docker run -it --rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64 \
+sh -c "build/docker-linux-amd64 version"
+
+# arm64
+docker run -it --rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+registry.cn-qingdao.aliyuncs.com/wod/alpine:3-arm64 \
+sh -c "build/docker-linux-arm64 version"
+
+# ppc64le
+docker run -it --rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+registry.cn-qingdao.aliyuncs.com/wod/alpine:3-ppc64le \
+sh -c "build/docker-linux-ppc64le version"
+
+# mips64le
+docker run -it --rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+registry.cn-qingdao.aliyuncs.com/wod/alpine:3-mips64le \
+sh -c "build/docker-linux-mips64le version"
+```
+
+## cache
+
+```bash
+# 构建缓存-->推送缓存至服务器
+docker run --rm \
+  -e PLUGIN_REBUILD=true \
+  -e PLUGIN_ENDPOINT=$PLUGIN_ENDPOINT \
+  -e PLUGIN_ACCESS_KEY=$PLUGIN_ACCESS_KEY \
+  -e PLUGIN_SECRET_KEY=$PLUGIN_SECRET_KEY \
+  -e PLUGIN_PATH="/cache/open-beagle/docker-cli" \
+  -e PLUGIN_MOUNT="./.git" \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \
+  registry.cn-qingdao.aliyuncs.com/wod/devops-s3-cache:1.0
+
+# 读取缓存-->将缓存从服务器拉取到本地
+docker run --rm \
+  -e PLUGIN_RESTORE=true \
+  -e PLUGIN_ENDPOINT=$PLUGIN_ENDPOINT \
+  -e PLUGIN_ACCESS_KEY=$PLUGIN_ACCESS_KEY \
+  -e PLUGIN_SECRET_KEY=$PLUGIN_SECRET_KEY \
+  -e PLUGIN_PATH="/cache/open-beagle/docker-cli" \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \
+  registry.cn-qingdao.aliyuncs.com/wod/devops-s3-cache:1.0
+```
