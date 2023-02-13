@@ -39,7 +39,7 @@ steps:
     image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-alpine
     privileged: true
     environment:
-      VERSION: 20.10.22-beagle
+      VERSION: 20.10.23-beagle
       PLATFORM: Beagle Cloud Team 2018-2023
     commands:
       - bash .beagle/alpine.sh
@@ -53,7 +53,7 @@ steps:
       dockerfile: .beagle/dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
-      version: v20.10.22
+      version: v20.10.23
       channel: amd64
       args: 'TARGETOS=linux,TARGETARCH=amd64'
       registry: registry.cn-qingdao.aliyuncs.com
@@ -71,7 +71,7 @@ steps:
       dockerfile: .beagle/dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-arm64
       repo: wod/docker-cli
-      version: v20.10.22
+      version: v20.10.23
       channel: arm64
       args: 'TARGETOS=linux,TARGETARCH=arm64'
       registry: registry.cn-qingdao.aliyuncs.com
@@ -89,7 +89,7 @@ steps:
       dockerfile: .beagle/dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-ppc64le
       repo: wod/docker-cli
-      version: v20.10.22
+      version: v20.10.23
       channel: ppc64le
       args: 'TARGETOS=linux,TARGETARCH=ppc64le'
       registry: registry.cn-qingdao.aliyuncs.com
@@ -107,7 +107,7 @@ steps:
       dockerfile: .beagle/dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-mips64le
       repo: wod/docker-cli
-      version: v20.10.22
+      version: v20.10.23
       channel: mips64le
       args: 'TARGETOS=linux,TARGETARCH=mips64le'
       registry: registry.cn-qingdao.aliyuncs.com
@@ -123,8 +123,8 @@ steps:
         path: /var/run/docker.sock
     settings:
       platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/mips64le
-      template: registry.cn-qingdao.aliyuncs.com/wod/docker-cli:v20.10.22-ARCH
-      target: registry.cn-qingdao.aliyuncs.com/wod/docker-cli:v20.10.22
+      template: registry.cn-qingdao.aliyuncs.com/wod/docker-cli:v20.10.23-ARCH
+      target: registry.cn-qingdao.aliyuncs.com/wod/docker-cli:v20.10.23
       username:
         from_secret: REGISTRY_USER_ALIYUN
       password:
