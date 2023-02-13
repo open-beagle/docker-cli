@@ -25,14 +25,14 @@ Docker inspect provides detailed information on constructs controlled by Docker.
 
 By default, `docker inspect` will render results in a JSON array.
 
-## Request a custom response format (--format)
+### <a name="format"></a> Format the output (--format)
 
 If a format is specified, the given template will be executed for each result.
 
 Go's [text/template](https://golang.org/pkg/text/template/) package describes
 all the details of the format.
 
-## Specify target type (--type)
+### <a name="type"></a> Specify target type (--type)
 
 `--type container|image|node|network|secret|service|volume|task|plugin`
 
@@ -49,7 +49,7 @@ The following example inspects a _volume_ named "myvolume"
 $ docker inspect --type=volume myvolume
 ```
 
-### <a name=size></a> Inspect the size of a container (-s, --size)
+### <a name="size"></a> Inspect the size of a container (-s, --size)
 
 The `--size`, or short-form `-s`, option adds two additional fields to the
 `docker inspect` output. This option only works for containers. The container
@@ -71,9 +71,9 @@ $ docker run --name database -d redis
 3b2cbf074c99db4a0cad35966a9e24d7bc277f5565c17233386589029b7db273
 $ docker inspect --size database -f '{{ .SizeRootFs }}'
 123125760
-$ docker inspect --size database -f '{{ .SizeRw }}'                 
+$ docker inspect --size database -f '{{ .SizeRw }}'
 8192
-$ docker exec database fallocate -l 1000 /newfile 
+$ docker exec database fallocate -l 1000 /newfile
 $ docker inspect --size database -f '{{ .SizeRw }}'
 12288
 ```
