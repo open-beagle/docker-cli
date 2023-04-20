@@ -7,32 +7,21 @@ git remote add upstream git@github.com:docker/cli.git
 
 git fetch upstream
 
-git merge v23.0.1
+git merge v23.0.4
 ```
 
 ## build
 
 ```bash
-# 使用alpine进行跨架构编译
+# loong64
 docker run -it \
 --rm \
 -v $PWD/:/go/src/github.com/docker/cli \
 -w /go/src/github.com/docker/cli \
 -e VERSION=23.0.1-beagle \
 -e PLATFORM="Beagle Cloud Team 2023-2028" \
-registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-alpine \
-bash .beagle/alpine.sh
-
-# 不使用bullseye，这个版本使用glibc无法干掉第三方依赖引用的glibc库
-# 服务器使用此docker-cli必须要升级glibc，否则会出bug
-docker run -it \
---rm \
--v $PWD/:/go/src/github.com/docker/cli \
--w /go/src/github.com/docker/cli \
--e VERSION=23.0.1-beagle \
--e PLATFORM="Beagle Cloud Team 2023-2028" \
-registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-bullseye \
-bash .beagle/bullseye.sh
+registry.cn-qingdao.aliyuncs.com/wod/golang:1.19-loongnix \
+bash .beagle/build.sh
 ```
 
 ## test
