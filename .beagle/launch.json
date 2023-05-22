@@ -9,7 +9,7 @@
       "program": "${workspaceRoot}/cmd/docker/docker.go",
       "args": [
         "push",
-        "registry.ysgz.bd-apaas.com/wod/awecloud-kubernetes-ui:v6.0.0-amd64",
+        "registry.ysgz.bd-apaas.com/wod/awecloud-kubernetes-ui:v6.0.0-amd64"
       ],
       "env": {
         // "HTTP_PROXY": "http://192.168.1.11:8888",
