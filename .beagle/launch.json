@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Go",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceRoot}/cmd/docker/docker.go",
+      "args": [
+        "push",
+        "registry.ysgz.bd-apaas.com/wod/awecloud-kubernetes-ui:v6.0.0-amd64"
+      ],
+      "env": {
+        // "HTTP_PROXY": "http://192.168.1.11:8888",
+        // "KUBE_DASHBOARD_WWW_DIR": "${workspaceRoot}/dist/frontend"
+      },
+      "showLog": true
+    }
+  ]
+}
