@@ -122,7 +122,7 @@ steps:
         path: /var/run/docker.sock
     settings:
       dockerfile: .beagle/dockerfile
-      base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-mips64le
+      base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
       version: v24.0.2
       channel: loong64
