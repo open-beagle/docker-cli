@@ -79,7 +79,7 @@ steps:
       - name: docker
         path: /var/run/docker.sock
     settings:
-      dockerfile: .beagle/cli.Dockerfile
+      dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
       version: v24.0.7
@@ -97,7 +97,7 @@ steps:
       - name: docker
         path: /var/run/docker.sock
     settings:
-      dockerfile: .beagle/cli.Dockerfile
+      dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-arm64
       repo: wod/docker-cli
       version: v24.0.7
@@ -115,7 +115,7 @@ steps:
       - name: docker
         path: /var/run/docker.sock
     settings:
-      dockerfile: .beagle/cli.Dockerfile
+      dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-ppc64le
       repo: wod/docker-cli
       version: v24.0.7
@@ -133,7 +133,7 @@ steps:
       - name: docker
         path: /var/run/docker.sock
     settings:
-      dockerfile: .beagle/cli.Dockerfile
+      dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-mips64le
       repo: wod/docker-cli
       version: v24.0.7
@@ -151,7 +151,7 @@ steps:
       - name: docker
         path: /var/run/docker.sock
     settings:
-      dockerfile: .beagle/cli.Dockerfile
+      dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
       version: v24.0.7
