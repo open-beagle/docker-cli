@@ -11,3 +11,4 @@ ARG TARGETOS
 ARG TARGETARCH
 
 ADD ./build/docker-$TARGETOS-$TARGETARCH /usr/local/bin/docker
+ADD ./build/docker-buildx-$TARGETOS-$TARGETARCH /usr/libexec/docker/cli-plugins/docker-buildx
