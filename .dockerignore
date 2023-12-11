@@ -1,4 +1,4 @@
-/build/
+# /build/
 /cli/winresources/versioninfo.json
 /cli/winresources/*.syso
 /man/man*/
