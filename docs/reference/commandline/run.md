@@ -416,6 +416,8 @@ environment, the variable isn't set in the container.
 You can also load the environment variables from a file. This file should use
 the syntax `<variable>=value` (which sets the variable to the given value) or
 `<variable>` (which takes the value from the local environment), and `#` for comments.
+Additionally, it's important to note that lines beginning with `#` are treated as line comments
+and are ignored, whereas a `#` appearing anywhere else in a line is treated as part of the variable value.
 
 ```console
 $ cat env.list
@@ -678,7 +680,7 @@ any number of minor numbers (added as new devices appear), add the
 following rule:
 
 ```console
-$ docker run -d --device-cgroup-rule='c 42:* rmw' -name my-container my-image
+$ docker run -d --device-cgroup-rule='c 42:* rmw' --name my-container my-image
 ```
 
 Then, a user could ask `udev` to execute a script that would `docker exec my-container mknod newDevX c 42 <minor>`
