@@ -307,10 +307,14 @@ func runDocker(ctx context.Context, dockerCli *command.DockerCli) error {
 		return err
 	}
 
-	mp := dockerCli.MeterProvider(ctx)
-	defer mp.Shutdown(ctx)
-	otel.SetMeterProvider(mp)
-	dockerCli.InstrumentCobraCommands(cmd, mp)
+	mp := dockerCli.MeterProvider()
+	if mp, ok := mp.(command.MeterProvider); ok {
+		defer mp.Shutdown(ctx)
+	} else {
+		fmt.Fprint(dockerCli.Err(), "Warning: Unexpected OTEL error, metrics may not be flushed")
+	}
+
+	dockerCli.InstrumentCobraCommands(ctx, cmd)
 
 	var envs []string
 	args, os.Args, envs, err = processAliases(dockerCli, cmd, args, os.Args)
