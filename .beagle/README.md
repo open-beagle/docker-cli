@@ -50,20 +50,6 @@ docker run -it --rm \
 -w /go/src/github.com/docker/cli \
 registry.cn-qingdao.aliyuncs.com/wod/alpine:3-arm64 \
 sh -c "build/docker-linux-arm64 version"
-
-# ppc64le
-docker run -it --rm \
--v $PWD/:/go/src/github.com/docker/cli \
--w /go/src/github.com/docker/cli \
-registry.cn-qingdao.aliyuncs.com/wod/alpine:3-ppc64le \
-sh -c "build/docker-linux-ppc64le version"
-
-# mips64le
-docker run -it --rm \
--v $PWD/:/go/src/github.com/docker/cli \
--w /go/src/github.com/docker/cli \
-registry.cn-qingdao.aliyuncs.com/wod/alpine:3-mips64le \
-sh -c "build/docker-linux-mips64le version"
 ```
 
 ## cache
