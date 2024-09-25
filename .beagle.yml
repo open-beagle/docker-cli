@@ -36,7 +36,7 @@ steps:
         from_secret: SOCKS5_PROXY
 
   - name: golang
-    image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.22
+    image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.23
     environment:
       VERSION: 27.3.1-beagle
       PLATFORM: Beagle Cloud Team 2023-2028

@@ -10,3 +10,6 @@ export DISABLE_WARN_OUTSIDE_CONTAINER=1
 
 export GOARCH=amd64
 make binary
+
+export GOARCH=arm64
+make binary
