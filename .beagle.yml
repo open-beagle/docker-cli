@@ -36,12 +36,20 @@ steps:
         from_secret: SOCKS5_PROXY
 
   - name: golang
-    image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.22-loongnix
+    image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.22
     environment:
-      VERSION: 27.2.1-beagle
+      VERSION: 27.3.1-beagle
       PLATFORM: Beagle Cloud Team 2023-2028
     commands:
       - bash .beagle/build.sh
+
+  - name: golang-loong64
+    image: registry.cn-qingdao.aliyuncs.com/wod/golang:1.22-loongnix
+    environment:
+      VERSION: 27.3.1-beagle
+      PLATFORM: Beagle Cloud Team 2023-2028
+    commands:
+      - bash .beagle/build-loong64.sh
 
   - name: buildx-amd64
     image: registry.cn-qingdao.aliyuncs.com/wod/docker-buildx:v0.16.2-amd64
@@ -70,7 +78,7 @@ steps:
       dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
-      version: v27.2.1
+      version: v27.3.1
       channel: amd64
       args: "TARGETOS=linux,TARGETARCH=amd64"
       registry: registry.cn-qingdao.aliyuncs.com
@@ -88,7 +96,7 @@ steps:
       dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-arm64
       repo: wod/docker-cli
-      version: v27.2.1
+      version: v27.3.1
       channel: arm64
       args: "TARGETOS=linux,TARGETARCH=arm64"
       registry: registry.cn-qingdao.aliyuncs.com
@@ -106,7 +114,7 @@ steps:
       dockerfile: .beagle/build.Dockerfile
       base: registry.cn-qingdao.aliyuncs.com/wod/alpine:3-amd64
       repo: wod/docker-cli
-      version: v27.2.1
+      version: v27.3.1
       channel: loong64
       args: "TARGETOS=linux,TARGETARCH=loong64"
       registry: registry.cn-qingdao.aliyuncs.com

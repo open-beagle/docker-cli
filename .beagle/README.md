@@ -7,21 +7,31 @@ git remote add upstream git@github.com:docker/cli.git
 
 git fetch upstream
 
-git merge v27.2.1
+git merge v27.3.1
 ```
 
 ## build
 
 ```bash
+# cross
+docker run -it \
+--rm \
+-v $PWD/:/go/src/github.com/docker/cli \
+-w /go/src/github.com/docker/cli \
+-e VERSION=27.3.1-beagle \
+-e PLATFORM="Beagle Cloud Team 2023-2028" \
+registry.cn-qingdao.aliyuncs.com/wod/golang:1.22 \
+bash .beagle/build.sh
+
 # loong64
 docker run -it \
 --rm \
 -v $PWD/:/go/src/github.com/docker/cli \
 -w /go/src/github.com/docker/cli \
--e VERSION=27.2.1-beagle \
+-e VERSION=27.3.1-beagle \
 -e PLATFORM="Beagle Cloud Team 2023-2028" \
 registry.cn-qingdao.aliyuncs.com/wod/golang:1.22-loongnix \
-bash .beagle/build.sh
+bash .beagle/build-loong64.sh
 ```
 
 ## test

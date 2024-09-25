@@ -8,5 +8,5 @@ export CGO_ENABLED=0
 export GO_STRIP=1
 export DISABLE_WARN_OUTSIDE_CONTAINER=1
 
-export GOARCH=amd64
+export GOARCH=loong64
 make binary
