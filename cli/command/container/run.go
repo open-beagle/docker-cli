@@ -69,15 +69,16 @@ func NewRunCommand(dockerCli command.Cli) *cobra.Command {
 	command.AddTrustVerificationFlags(flags, &options.untrusted, dockerCli.ContentTrustEnabled())
 	copts = addFlags(flags)
 
-	_ = cmd.RegisterFlagCompletionFunc("cap-add", completeLinuxCapabilityNames)
-	_ = cmd.RegisterFlagCompletionFunc("cap-drop", completeLinuxCapabilityNames)
-	_ = cmd.RegisterFlagCompletionFunc("env", completion.EnvVarNames)
-	_ = cmd.RegisterFlagCompletionFunc("env-file", completion.FileNames)
-	_ = cmd.RegisterFlagCompletionFunc("network", completion.NetworkNames(dockerCli))
-	_ = cmd.RegisterFlagCompletionFunc("pull", completion.FromList(PullImageAlways, PullImageMissing, PullImageNever))
-	_ = cmd.RegisterFlagCompletionFunc("restart", completeRestartPolicies)
-	_ = cmd.RegisterFlagCompletionFunc("stop-signal", completeSignals)
-	_ = cmd.RegisterFlagCompletionFunc("volumes-from", completion.ContainerNames(dockerCli, true))
+	_ = cmd.RegisterFlagCompletionFunc("detach-keys", completeDetachKeys)
+	addCompletions(cmd, dockerCli)
+
+	flags.VisitAll(func(flag *pflag.Flag) {
+		// Set a default completion function if none was set. We don't look
+		// up if it does already have one set, because Cobra does this for
+		// us, and returns an error (which we ignore for this reason).
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+	})
+
 	return cmd
 }
 
@@ -111,8 +112,6 @@ func runRun(ctx context.Context, dockerCli command.Cli, flags *pflag.FlagSet, ro
 
 //nolint:gocyclo
 func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOptions, copts *containerOptions, containerCfg *containerConfig) error {
-	ctx = context.WithoutCancel(ctx)
-
 	config := containerCfg.Config
 	stdout, stderr := dockerCli.Out(), dockerCli.Err()
 	apiClient := dockerCli.Client()
@@ -134,9 +133,6 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 		config.StdinOnce = false
 	}
 
-	ctx, cancelFun := context.WithCancel(ctx)
-	defer cancelFun()
-
 	containerID, err := createContainer(ctx, dockerCli, containerCfg, &runOpts.createOptions)
 	if err != nil {
 		reportError(stderr, "run", err.Error(), true)
@@ -152,6 +148,9 @@ func runContainer(ctx context.Context, dockerCli command.Cli, runOpts *runOption
 		go ForwardAllSignals(bgCtx, apiClient, containerID, sigc)
 		defer signal.StopCatch(sigc)
 	}
+
+	ctx, cancelFun := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelFun()
 
 	var (
 		waitDisplayID chan struct{}

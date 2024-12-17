@@ -1,5 +1,5 @@
 // FIXME(thaJeztah): remove once we are a module; the go:build directive prevents go from downgrading language version to go1.16:
-//go:build go1.21
+//go:build go1.22
 
 package image
 
@@ -67,6 +67,8 @@ func NewPushCommand(dockerCli command.Cli) *cobra.Command {
 Image index won't be pushed, meaning that other manifests, including attestations won't be preserved.
 'os[/arch[/variant]]': Explicit platform (eg. linux/amd64)`)
 	flags.SetAnnotation("platform", "version", []string{"1.46"})
+
+	_ = cmd.RegisterFlagCompletionFunc("platform", completion.Platforms)
 
 	return cmd
 }

@@ -4,7 +4,7 @@ module github.com/docker/cli
 // There is no 'go.mod' file, as that would imply opting in for all the rules
 // around SemVer, which this repo cannot abide by as it uses CalVer.
 
-go 1.21.0
+go 1.22.0
 
 require (
 	dario.cat/mergo v1.0.1
@@ -13,7 +13,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli-docs-tool v0.8.0
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.3.0+incompatible
+	github.com/docker/docker v27.4.0-rc.3+incompatible
 	github.com/docker/docker-credential-helpers v0.8.2
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
@@ -25,7 +25,8 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/moby/patternmatcher v0.6.0
-	github.com/moby/swarmkit/v2 v2.0.0-20240611172349-ea1a7cec35cb
+	github.com/moby/swarmkit/v2 v2.0.0-20241017191044-e8ecf83ee08e
+	github.com/moby/sys/capability v0.3.0
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/signal v0.7.1
 	github.com/moby/term v0.5.0
@@ -48,9 +49,9 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.21.0
 	go.opentelemetry.io/otel/trace v1.21.0
 	golang.org/x/sync v0.8.0
-	golang.org/x/sys v0.24.0
-	golang.org/x/term v0.23.0
-	golang.org/x/text v0.17.0
+	golang.org/x/sys v0.26.0
+	golang.org/x/term v0.24.0
+	golang.org/x/text v0.18.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.5.1
 	tags.cncf.io/container-device-interface v0.8.0
@@ -62,7 +63,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/docker/go v1.5.1-1.0.20160303222718-d30aec9fd63c // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
@@ -74,7 +75,7 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
@@ -94,11 +95,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.21.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.21.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/grpc v1.62.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/grpc v1.66.3 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 )
