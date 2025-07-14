@@ -25,13 +25,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Remove 'v' prefix and set new env var
+        id: strip_v
+        run: |
+          echo "BUILD_VERSION_WITHOUT_V=${BUILD_VERSION#v}" >> $GITHUB_ENV
+
       - name: Cross Build
-        env:
-          BUILD_VERSION: ${{ env.BUILD_VERSION }}
         run: |
           docker run --rm -v ${{ github.workspace }}:/go/src/github.com/docker/cli \
             -w /go/src/github.com/docker/cli \
-            -e BUILD_VERSION=${{ env.BUILD_VERSION }} \
+            -e VERSION=${{ env.BUILD_VERSION_WITHOUT_V }}-beagle \
+            -e PLATFORM="© 2018 Beagle Cloud Team" \
             ghcr.io/${{ github.repository_owner }}/golang:1.24-bookworm \
             bash -c "bash ./.beagle/build.sh"
 
