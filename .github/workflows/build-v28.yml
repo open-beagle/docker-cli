@@ -7,8 +7,8 @@ on:
   workflow_dispatch: # 允许手动触发
 
 env:
-  BUILD_VERSION: v28.2.2
-  BUILDX_VERSION: v0.20.1
+  BUILD_VERSION: v28.3.2
+  BUILDX_VERSION: v0.25.0
 
 jobs:
   build:
