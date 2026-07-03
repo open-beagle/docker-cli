@@ -10,6 +10,15 @@ git -C ansible-docker-cli fetch upstream
 git -C ansible-docker-cli merge v28.5.1
 ```
 
+## git
+
+```bash
+git -C ansible-docker-cli checkout release-v28 && \
+git -C ansible-docker-cli merge main && \
+git -C ansible-docker-cli push origin release-v28 && \
+git -C ansible-docker-cli checkout main
+```
+
 ## build
 
 ```bash
