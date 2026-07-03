@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/opts"
@@ -34,7 +33,7 @@ func newListCommand(dockerCli command.Cli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runList(cmd.Context(), dockerCli, options)
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 	flags := cmd.Flags()
 	flags.BoolVarP(&options.quiet, "quiet", "q", false, "Only display IDs")
@@ -45,25 +44,25 @@ func newListCommand(dockerCli command.Cli) *cobra.Command {
 		// Set a default completion function if none was set. We don't look
 		// up if it does already have one set, because Cobra does this for
 		// us, and returns an error (which we ignore for this reason).
-		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, cobra.NoFileCompletions)
 	})
 	return cmd
 }
 
-func runList(ctx context.Context, dockerCli command.Cli, options listOptions) error {
-	client := dockerCli.Client()
+func runList(ctx context.Context, dockerCLI command.Cli, options listOptions) error {
+	apiClient := dockerCLI.Client()
 
-	nodes, err := client.NodeList(
-		ctx,
-		swarm.NodeListOptions{Filters: options.filter.Value()})
+	nodes, err := apiClient.NodeList(ctx, swarm.NodeListOptions{
+		Filters: options.filter.Value(),
+	})
 	if err != nil {
 		return err
 	}
 
-	info := system.Info{}
+	var info system.Info
 	if len(nodes) > 0 && !options.quiet {
 		// only non-empty nodes and not quiet, should we call /info api
-		info, err = client.Info(ctx)
+		info, err = apiClient.Info(ctx)
 		if err != nil {
 			return err
 		}
@@ -72,17 +71,17 @@ func runList(ctx context.Context, dockerCli command.Cli, options listOptions) er
 	format := options.format
 	if len(format) == 0 {
 		format = formatter.TableFormatKey
-		if len(dockerCli.ConfigFile().NodesFormat) > 0 && !options.quiet {
-			format = dockerCli.ConfigFile().NodesFormat
+		if len(dockerCLI.ConfigFile().NodesFormat) > 0 && !options.quiet {
+			format = dockerCLI.ConfigFile().NodesFormat
 		}
 	}
 
 	nodesCtx := formatter.Context{
-		Output: dockerCli.Out(),
-		Format: NewFormat(format, options.quiet),
+		Output: dockerCLI.Out(),
+		Format: newFormat(format, options.quiet),
 	}
 	sort.Slice(nodes, func(i, j int) bool {
 		return sortorder.NaturalLess(nodes[i].Description.Hostname, nodes[j].Description.Hostname)
 	})
-	return FormatWrite(nodesCtx, nodes, info)
+	return formatWrite(nodesCtx, nodes, info)
 }

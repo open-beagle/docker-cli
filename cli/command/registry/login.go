@@ -8,17 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	cerrdefs "github.com/containerd/errdefs"
+	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/config/configfile"
 	configtypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/cli/internal/oauth/manager"
+	"github.com/docker/cli/internal/registry"
 	"github.com/docker/cli/internal/tui"
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -32,7 +31,14 @@ type loginOptions struct {
 }
 
 // NewLoginCommand creates a new `docker login` command
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
 func NewLoginCommand(dockerCLI command.Cli) *cobra.Command {
+	return newLoginCommand(dockerCLI)
+}
+
+// newLoginCommand creates a new `docker login` command
+func newLoginCommand(dockerCLI command.Cli) *cobra.Command {
 	var opts loginOptions
 
 	cmd := &cobra.Command{
@@ -52,7 +58,7 @@ func NewLoginCommand(dockerCLI command.Cli) *cobra.Command {
 		Annotations: map[string]string{
 			"category-top": "8",
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -110,6 +116,9 @@ func runLogin(ctx context.Context, dockerCLI command.Cli, opts loginOptions) err
 	if err := verifyLoginOptions(dockerCLI, &opts); err != nil {
 		return err
 	}
+
+	maybePrintEnvAuthWarning(dockerCLI)
+
 	var (
 		serverAddress string
 		msg           string
@@ -156,7 +165,7 @@ func loginWithStoredCredentials(ctx context.Context, dockerCLI command.Cli, auth
 
 	response, err := dockerCLI.Client().RegistryLogin(ctx, authConfig)
 	if err != nil {
-		if cerrdefs.IsUnauthorized(err) {
+		if errdefs.IsUnauthorized(err) {
 			_, _ = fmt.Fprintln(dockerCLI.Err(), "Stored credentials invalid or expired")
 		} else {
 			_, _ = fmt.Fprintln(dockerCLI.Err(), "Login did not succeed, error:", err)
@@ -175,10 +184,15 @@ func loginWithStoredCredentials(ctx context.Context, dockerCLI command.Cli, auth
 	return response.Status, err
 }
 
+// OauthLoginEscapeHatchEnvVar disables the browser-based OAuth login workflow.
+//
+// Deprecated: this const was only used internally and will be removed in the next release.
 const OauthLoginEscapeHatchEnvVar = "DOCKER_CLI_DISABLE_OAUTH_LOGIN"
 
+const oauthLoginEscapeHatchEnvVar = "DOCKER_CLI_DISABLE_OAUTH_LOGIN"
+
 func isOauthLoginDisabled() bool {
-	if v := os.Getenv(OauthLoginEscapeHatchEnvVar); v != "" {
+	if v := os.Getenv(oauthLoginEscapeHatchEnvVar); v != "" {
 		enabled, err := strconv.ParseBool(v)
 		if err != nil {
 			return false
@@ -245,12 +259,30 @@ func loginWithDeviceCodeFlow(ctx context.Context, dockerCLI command.Cli) (msg st
 		return "", err
 	}
 
-	response, err := loginWithRegistry(ctx, dockerCLI.Client(), registrytypes.AuthConfig(*authConfig))
+	response, err := loginWithRegistry(ctx, dockerCLI.Client(), registrytypes.AuthConfig{
+		Username:      authConfig.Username,
+		Password:      authConfig.Password,
+		ServerAddress: authConfig.ServerAddress,
+
+		// TODO(thaJeztah): Are these expected to be included?
+		Auth:          authConfig.Auth,
+		IdentityToken: authConfig.IdentityToken,
+		RegistryToken: authConfig.RegistryToken,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	if err = storeCredentials(dockerCLI.ConfigFile(), registrytypes.AuthConfig(*authConfig)); err != nil {
+	if err = storeCredentials(dockerCLI.ConfigFile(), registrytypes.AuthConfig{
+		Username:      authConfig.Username,
+		Password:      authConfig.Password,
+		ServerAddress: authConfig.ServerAddress,
+
+		// TODO(thaJeztah): Are these expected to be included?
+		Auth:          authConfig.Auth,
+		IdentityToken: authConfig.IdentityToken,
+		RegistryToken: authConfig.RegistryToken,
+	}); err != nil {
 		return "", err
 	}
 
@@ -259,7 +291,16 @@ func loginWithDeviceCodeFlow(ctx context.Context, dockerCLI command.Cli) (msg st
 
 func storeCredentials(cfg *configfile.ConfigFile, authConfig registrytypes.AuthConfig) error {
 	creds := cfg.GetCredentialsStore(authConfig.ServerAddress)
-	if err := creds.Store(configtypes.AuthConfig(authConfig)); err != nil {
+	if err := creds.Store(configtypes.AuthConfig{
+		Username:      authConfig.Username,
+		Password:      authConfig.Password,
+		ServerAddress: authConfig.ServerAddress,
+
+		// TODO(thaJeztah): Are these expected to be included?
+		Auth:          authConfig.Auth,
+		IdentityToken: authConfig.IdentityToken,
+		RegistryToken: authConfig.RegistryToken,
+	}); err != nil {
 		return errors.Errorf("Error saving credentials: %v", err)
 	}
 
@@ -285,7 +326,7 @@ func loginClientSide(ctx context.Context, auth registrytypes.AuthConfig) (*regis
 		return nil, err
 	}
 
-	_, token, err := svc.Auth(ctx, &auth, command.UserAgent())
+	token, err := svc.Auth(ctx, &auth, command.UserAgent())
 	if err != nil {
 		return nil, err
 	}

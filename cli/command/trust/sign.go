@@ -11,7 +11,6 @@ import (
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/image"
 	"github.com/docker/cli/cli/trust"
 	imagetypes "github.com/docker/docker/api/types/image"
 	registrytypes "github.com/docker/docker/api/types/registry"
@@ -45,7 +44,7 @@ func newSignCommand(dockerCLI command.Cli) *cobra.Command {
 
 func runSignImage(ctx context.Context, dockerCLI command.Cli, options signOptions) error {
 	imageName := options.imageName
-	imgRefAndAuth, err := trust.GetImageReferencesAndAuth(ctx, image.AuthResolver(dockerCLI), imageName)
+	imgRefAndAuth, err := trust.GetImageReferencesAndAuth(ctx, authResolver(dockerCLI), imageName)
 	if err != nil {
 		return err
 	}
@@ -82,7 +81,6 @@ func runSignImage(ctx context.Context, dockerCLI command.Cli, options signOption
 			return trust.NotaryError(imgRefAndAuth.RepoInfo().Name.Name(), err)
 		}
 	}
-	requestPrivilege := command.RegistryAuthenticationPrivilegedFunc(dockerCLI, imgRefAndAuth.RepoInfo().Index, "push")
 	target, err := createTarget(notaryRepo, imgRefAndAuth.Tag())
 	if err != nil || options.local {
 		switch err := err.(type) {
@@ -101,7 +99,7 @@ func runSignImage(ctx context.Context, dockerCLI command.Cli, options signOption
 			}
 			responseBody, err := dockerCLI.Client().ImagePush(ctx, reference.FamiliarString(imgRefAndAuth.Reference()), imagetypes.PushOptions{
 				RegistryAuth:  encodedAuth,
-				PrivilegeFunc: requestPrivilege,
+				PrivilegeFunc: nil,
 			})
 			if err != nil {
 				return err

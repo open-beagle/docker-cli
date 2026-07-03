@@ -9,17 +9,16 @@ import (
 	"strconv"
 	"strings"
 
-	cerrdefs "github.com/containerd/errdefs"
+	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
+	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/command/idresolver"
 	"github.com/docker/cli/internal/logdetails"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -73,7 +72,7 @@ func newLogsCommand(dockerCli command.Cli) *cobra.Command {
 		// Set a default completion function if none was set. We don't look
 		// up if it does already have one set, because Cobra does this for
 		// us, and returns an error (which we ignore for this reason).
-		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, cobra.NoFileCompletions)
 	})
 	return cmd
 }
@@ -93,12 +92,12 @@ func runLogs(ctx context.Context, dockerCli command.Cli, opts *logsOptions) erro
 	service, _, err := apiClient.ServiceInspectWithRaw(ctx, opts.target, swarm.ServiceInspectOptions{})
 	if err != nil {
 		// if it's any error other than service not found, it's Real
-		if !cerrdefs.IsNotFound(err) {
+		if !errdefs.IsNotFound(err) {
 			return err
 		}
 		task, _, err := apiClient.TaskInspectWithRaw(ctx, opts.target)
 		if err != nil {
-			if cerrdefs.IsNotFound(err) {
+			if errdefs.IsNotFound(err) {
 				// if the task isn't found, rewrite the error to be clear
 				// that we looked for services AND tasks and found none
 				err = fmt.Errorf("no such task or service: %v", opts.target)
@@ -220,7 +219,7 @@ func (f *taskFormatter) format(ctx context.Context, logCtx logContext) (string, 
 		if f.opts.noTrunc {
 			taskName += "." + task.ID
 		} else {
-			taskName += "." + stringid.TruncateID(task.ID)
+			taskName += "." + formatter.TruncateID(task.ID)
 		}
 	}
 

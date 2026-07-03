@@ -58,8 +58,17 @@ func TestGetDefaultAuthConfig(t *testing.T) {
 		},
 	}
 	cfg := configfile.New("filename")
-	for _, authconfig := range testAuthConfigs {
-		assert.Check(t, cfg.GetCredentialsStore(authconfig.ServerAddress).Store(configtypes.AuthConfig(authconfig)))
+	for _, authConfig := range testAuthConfigs {
+		assert.Check(t, cfg.GetCredentialsStore(authConfig.ServerAddress).Store(configtypes.AuthConfig{
+			Username:      authConfig.Username,
+			Password:      authConfig.Password,
+			ServerAddress: authConfig.ServerAddress,
+
+			// TODO(thaJeztah): Are these expected to be included?
+			Auth:          authConfig.Auth,
+			IdentityToken: authConfig.IdentityToken,
+			RegistryToken: authConfig.RegistryToken,
+		}))
 	}
 	for _, tc := range testCases {
 		serverAddress := tc.inputServerAddress
@@ -185,9 +194,9 @@ func TestRetrieveAuthTokenFromImage(t *testing.T) {
 				imageRef := path.Join(tc.prefix, remoteRef)
 				actual, err := command.RetrieveAuthTokenFromImage(&cfg, imageRef)
 				assert.NilError(t, err)
-				ac, err := registry.DecodeAuthConfig(actual)
+				expectedAuthCfg, err := registry.EncodeAuthConfig(tc.expectedAuthCfg)
 				assert.NilError(t, err)
-				assert.Check(t, is.DeepEqual(*ac, tc.expectedAuthCfg))
+				assert.Equal(t, actual, expectedAuthCfg)
 			}
 		})
 	}

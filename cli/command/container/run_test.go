@@ -2,9 +2,7 @@ package container
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"syscall"
@@ -20,7 +18,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/pkg/progress"
+	"github.com/docker/docker/pkg/streamformatter"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/pflag"
 	"gotest.tools/v3/assert"
@@ -40,7 +39,7 @@ func TestRunValidateFlags(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := NewRunCommand(test.NewFakeCli(&fakeClient{}))
+			cmd := newRunCommand(test.NewFakeCli(&fakeClient{}))
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
 			cmd.SetArgs(tc.args)
@@ -64,7 +63,7 @@ func TestRunLabel(t *testing.T) {
 		},
 		Version: "1.36",
 	})
-	cmd := NewRunCommand(fakeCLI)
+	cmd := newRunCommand(fakeCLI)
 	cmd.SetArgs([]string{"--detach=true", "--label", "foo", "busybox"})
 	assert.NilError(t, cmd.Execute())
 }
@@ -111,7 +110,7 @@ func TestRunAttach(t *testing.T) {
 		fc.SetIn(streams.NewIn(tty))
 	})
 
-	cmd := NewRunCommand(fakeCLI)
+	cmd := newRunCommand(fakeCLI)
 	cmd.SetArgs([]string{"-it", "busybox"})
 	cmd.SilenceUsage = true
 	cmdErrC := make(chan error, 1)
@@ -188,7 +187,7 @@ func TestRunAttachTermination(t *testing.T) {
 		fc.SetIn(streams.NewIn(tty))
 	})
 
-	cmd := NewRunCommand(fakeCLI)
+	cmd := newRunCommand(fakeCLI)
 	cmd.SetArgs([]string{"-it", "busybox"})
 	cmd.SilenceUsage = true
 	cmdErrC := make(chan error, 1)
@@ -242,23 +241,19 @@ func TestRunPullTermination(t *testing.T) {
 				_ = server.Close()
 			})
 			go func() {
-				enc := json.NewEncoder(server)
+				id := test.RandomID()[:12] // short-ID
+				progressOutput := streamformatter.NewJSONProgressOutput(server, true)
 				for i := 0; i < 100; i++ {
 					select {
 					case <-ctx.Done():
 						assert.NilError(t, server.Close(), "failed to close imageCreateFunc server")
 						return
 					default:
-						assert.NilError(t, enc.Encode(jsonmessage.JSONMessage{
-							Status:   "Downloading",
-							ID:       fmt.Sprintf("id-%d", i),
-							TimeNano: time.Now().UnixNano(),
-							Time:     time.Now().Unix(),
-							Progress: &jsonmessage.JSONProgress{
-								Current: int64(i),
-								Total:   100,
-								Start:   0,
-							},
+						assert.NilError(t, progressOutput.WriteProgress(progress.Progress{
+							ID:      id,
+							Message: "Downloading",
+							Current: int64(i),
+							Total:   100,
 						}))
 						time.Sleep(100 * time.Millisecond)
 					}
@@ -270,7 +265,7 @@ func TestRunPullTermination(t *testing.T) {
 		Version: "1.30",
 	})
 
-	cmd := NewRunCommand(fakeCLI)
+	cmd := newRunCommand(fakeCLI)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"--pull", "always", "foobar:latest"})
@@ -328,6 +323,7 @@ func TestRunCommandWithContentTrustErrors(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("DOCKER_CONTENT_TRUST", "true")
 			fakeCLI := test.NewFakeCli(&fakeClient{
 				createContainerFunc: func(config *container.Config,
 					hostConfig *container.HostConfig,
@@ -337,9 +333,9 @@ func TestRunCommandWithContentTrustErrors(t *testing.T) {
 				) (container.CreateResponse, error) {
 					return container.CreateResponse{}, errors.New("shouldn't try to pull image")
 				},
-			}, test.EnableContentTrust)
+			})
 			fakeCLI.SetNotaryClient(tc.notaryFunc)
-			cmd := NewRunCommand(fakeCLI)
+			cmd := newRunCommand(fakeCLI)
 			cmd.SetArgs(tc.args)
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)

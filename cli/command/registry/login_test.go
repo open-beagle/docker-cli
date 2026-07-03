@@ -13,11 +13,11 @@ import (
 	configtypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/cli/internal/prompt"
+	"github.com/docker/cli/internal/registry"
 	"github.com/docker/cli/internal/test"
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/registry"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
 	"gotest.tools/v3/fs"
@@ -533,7 +533,7 @@ func TestIsOauthLoginDisabled(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Setenv(OauthLoginEscapeHatchEnvVar, tc.envVar)
+		t.Setenv(oauthLoginEscapeHatchEnvVar, tc.envVar)
 
 		disabled := isOauthLoginDisabled()
 
@@ -584,7 +584,7 @@ func TestLoginValidateFlags(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := NewLoginCommand(test.NewFakeCli(&fakeClient{}))
+			cmd := newLoginCommand(test.NewFakeCli(&fakeClient{}))
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
 			cmd.SetArgs(tc.args)

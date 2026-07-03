@@ -12,25 +12,32 @@ import (
 )
 
 // NewNodeCommand returns a cobra command for `node` subcommands
-func NewNodeCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewNodeCommand(dockerCLI command.Cli) *cobra.Command {
+	return newNodeCommand(dockerCLI)
+}
+
+// newNodeCommand returns a cobra command for `node` subcommands
+func newNodeCommand(dockerCLI command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "node",
 		Short: "Manage Swarm nodes",
 		Args:  cli.NoArgs,
-		RunE:  command.ShowHelp(dockerCli.Err()),
+		RunE:  command.ShowHelp(dockerCLI.Err()),
 		Annotations: map[string]string{
 			"version": "1.24",
 			"swarm":   "manager",
 		},
 	}
 	cmd.AddCommand(
-		newDemoteCommand(dockerCli),
-		newInspectCommand(dockerCli),
-		newListCommand(dockerCli),
-		newPromoteCommand(dockerCli),
-		newRemoveCommand(dockerCli),
-		newPsCommand(dockerCli),
-		newUpdateCommand(dockerCli),
+		newDemoteCommand(dockerCLI),
+		newInspectCommand(dockerCLI),
+		newListCommand(dockerCLI),
+		newPromoteCommand(dockerCLI),
+		newRemoveCommand(dockerCLI),
+		newPsCommand(dockerCLI),
+		newUpdateCommand(dockerCLI),
 	)
 	return cmd
 }
@@ -48,6 +55,8 @@ func Reference(ctx context.Context, apiClient client.APIClient, ref string) (str
 			// If there's no node ID in /info, the node probably
 			// isn't a manager. Call a swarm-specific endpoint to
 			// get a more specific error message.
+			//
+			// FIXME(thaJeztah): this should not require calling a Swarm endpoint, and we could just suffice with info / ping (which has swarm status).
 			_, err = apiClient.NodeList(ctx, swarm.NodeListOptions{})
 			if err != nil {
 				return "", err

@@ -3,17 +3,17 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image"
+	"github.com/docker/cli/cli/trust"
 	"github.com/docker/cli/internal/jsonstream"
 	"github.com/docker/cli/internal/prompt"
+	"github.com/docker/cli/internal/registry"
 	"github.com/docker/docker/api/types"
 	registrytypes "github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -29,9 +29,9 @@ type pluginOptions struct {
 	untrusted       bool
 }
 
-func loadPullFlags(dockerCli command.Cli, opts *pluginOptions, flags *pflag.FlagSet) {
+func loadPullFlags(opts *pluginOptions, flags *pflag.FlagSet) {
 	flags.BoolVar(&opts.grantPerms, "grant-all-permissions", false, "Grant all permissions necessary to run the plugin")
-	command.AddTrustVerificationFlags(flags, &opts.untrusted, dockerCli.ContentTrustEnabled())
+	flags.BoolVar(&opts.untrusted, "disable-content-trust", !trust.Enabled(), "Skip image verification")
 }
 
 func newInstallCommand(dockerCli command.Cli) *cobra.Command {
@@ -50,13 +50,13 @@ func newInstallCommand(dockerCli command.Cli) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	loadPullFlags(dockerCli, &options, flags)
+	loadPullFlags(&options, flags)
 	flags.BoolVar(&options.disable, "disable", false, "Do not enable the plugin on install")
 	flags.StringVar(&options.localName, "alias", "", "Local name for plugin")
 	return cmd
 }
 
-func buildPullConfig(ctx context.Context, dockerCli command.Cli, opts pluginOptions, cmdName string) (types.PluginInstallOptions, error) {
+func buildPullConfig(ctx context.Context, dockerCli command.Cli, opts pluginOptions) (types.PluginInstallOptions, error) {
 	// Names with both tag and digest will be treated by the daemon
 	// as a pull by digest with a local name for the tag
 	// (if no local name is provided).
@@ -65,8 +65,7 @@ func buildPullConfig(ctx context.Context, dockerCli command.Cli, opts pluginOpti
 		return types.PluginInstallOptions{}, err
 	}
 
-	repoInfo, _ := registry.ParseRepositoryInfo(ref)
-
+	indexInfo := registry.NewIndexInfo(ref)
 	remote := ref.String()
 
 	_, isCanonical := ref.(reference.Canonical)
@@ -84,7 +83,7 @@ func buildPullConfig(ctx context.Context, dockerCli command.Cli, opts pluginOpti
 		remote = reference.FamiliarString(trusted)
 	}
 
-	authConfig := command.ResolveAuthConfig(dockerCli.ConfigFile(), repoInfo.Index)
+	authConfig := command.ResolveAuthConfig(dockerCli.ConfigFile(), indexInfo)
 	encodedAuth, err := registrytypes.EncodeAuthConfig(authConfig)
 	if err != nil {
 		return types.PluginInstallOptions{}, err
@@ -96,7 +95,7 @@ func buildPullConfig(ctx context.Context, dockerCli command.Cli, opts pluginOpti
 		Disabled:              opts.disable,
 		AcceptAllPermissions:  opts.grantPerms,
 		AcceptPermissionsFunc: acceptPrivileges(dockerCli, opts.remote),
-		PrivilegeFunc:         command.RegistryAuthenticationPrivilegedFunc(dockerCli, repoInfo.Index, cmdName),
+		PrivilegeFunc:         nil,
 		Args:                  opts.args,
 	}
 	return options, nil
@@ -115,18 +114,17 @@ func runInstall(ctx context.Context, dockerCLI command.Cli, opts pluginOptions) 
 		localName = reference.FamiliarString(reference.TagNameOnly(aref))
 	}
 
-	options, err := buildPullConfig(ctx, dockerCLI, opts, "plugin install")
+	options, err := buildPullConfig(ctx, dockerCLI, opts)
 	if err != nil {
 		return err
 	}
 	responseBody, err := dockerCLI.Client().PluginInstall(ctx, localName, options)
 	if err != nil {
-		if strings.Contains(err.Error(), "(image) when fetching") {
-			return errors.New(err.Error() + " - Use \"docker image pull\"")
-		}
 		return err
 	}
-	defer responseBody.Close()
+	defer func() {
+		_ = responseBody.Close()
+	}()
 	if err := jsonstream.Display(ctx, responseBody, dockerCLI.Out()); err != nil {
 		return err
 	}

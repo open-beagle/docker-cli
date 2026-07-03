@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/internal/prompt"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types/build"
@@ -24,7 +23,14 @@ type pruneOptions struct {
 }
 
 // NewPruneCommand returns a new cobra prune command for images
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
 func NewPruneCommand(dockerCli command.Cli) *cobra.Command {
+	return newPruneCommand(dockerCli)
+}
+
+// newPruneCommand returns a new cobra prune command for images
+func newPruneCommand(dockerCLI command.Cli) *cobra.Command {
 	options := pruneOptions{filter: opts.NewFilterOpt()}
 
 	cmd := &cobra.Command{
@@ -32,18 +38,18 @@ func NewPruneCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Remove build cache",
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			spaceReclaimed, output, err := runPrune(cmd.Context(), dockerCli, options)
+			spaceReclaimed, output, err := runPrune(cmd.Context(), dockerCLI, options)
 			if err != nil {
 				return err
 			}
 			if output != "" {
-				fmt.Fprintln(dockerCli.Out(), output)
+				_, _ = fmt.Fprintln(dockerCLI.Out(), output)
 			}
-			fmt.Fprintln(dockerCli.Out(), "Total reclaimed space:", units.HumanSize(float64(spaceReclaimed)))
+			_, _ = fmt.Fprintln(dockerCLI.Out(), "Total reclaimed space:", units.HumanSize(float64(spaceReclaimed)))
 			return nil
 		},
 		Annotations:       map[string]string{"version": "1.39"},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -79,9 +85,12 @@ func runPrune(ctx context.Context, dockerCli command.Cli, options pruneOptions) 
 	}
 
 	report, err := dockerCli.Client().BuildCachePrune(ctx, build.CachePruneOptions{
-		All:         options.all,
-		KeepStorage: options.keepStorage.Value(), // FIXME(thaJeztah): rewrite to use new options; see https://github.com/moby/moby/pull/48720
-		Filters:     pruneFilters,
+		All: options.all,
+		// TODO(austinvazquez): remove when updated to use github.com/moby/moby/client@v0.1.0
+		// See https://github.com/moby/moby/pull/50772 for more details.
+		KeepStorage:   options.keepStorage.Value(),
+		ReservedSpace: options.keepStorage.Value(),
+		Filters:       pruneFilters,
 	})
 	if err != nil {
 		return 0, "", err

@@ -8,12 +8,19 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/docker/cli/internal/oauth/manager"
-	"github.com/docker/docker/registry"
+	"github.com/docker/cli/internal/registry"
 	"github.com/spf13/cobra"
 )
 
 // NewLogoutCommand creates a new `docker logout` command
-func NewLogoutCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewLogoutCommand(dockerCLI command.Cli) *cobra.Command {
+	return newLogoutCommand(dockerCLI)
+}
+
+// newLogoutCommand creates a new `docker logout` command
+func newLogoutCommand(dockerCLI command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logout [SERVER]",
 		Short: "Log out from a registry",
@@ -24,7 +31,7 @@ func NewLogoutCommand(dockerCli command.Cli) *cobra.Command {
 			if len(args) > 0 {
 				serverAddress = args[0]
 			}
-			return runLogout(cmd.Context(), dockerCli, serverAddress)
+			return runLogout(cmd.Context(), dockerCLI, serverAddress)
 		},
 		Annotations: map[string]string{
 			"category-top": "9",
@@ -36,6 +43,8 @@ func NewLogoutCommand(dockerCli command.Cli) *cobra.Command {
 }
 
 func runLogout(ctx context.Context, dockerCLI command.Cli, serverAddress string) error {
+	maybePrintEnvAuthWarning(dockerCLI)
+
 	var isDefaultRegistry bool
 
 	if serverAddress == "" {

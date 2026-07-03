@@ -10,7 +10,6 @@ import (
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/internal/test"
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/pkg/stringid"
 	"gotest.tools/v3/assert"
 )
 
@@ -21,7 +20,7 @@ type historyCase struct {
 }
 
 func TestHistoryContext_ID(t *testing.T) {
-	id := stringid.GenerateRandomID()
+	id := test.RandomID()
 
 	var ctx historyContext
 	cases := []historyCase{
@@ -35,7 +34,7 @@ func TestHistoryContext_ID(t *testing.T) {
 			historyContext{
 				h:     image.HistoryResponseItem{ID: id},
 				trunc: true,
-			}, stringid.TruncateID(id), ctx.ID,
+			}, formatter.TruncateID(id), ctx.ID,
 		},
 	}
 
@@ -238,7 +237,7 @@ imageID6   17 years ago   /bin/bash echo                                  183MB 
 	}{
 		{
 			formatter.Context{
-				Format: NewHistoryFormat("table", false, true),
+				Format: newHistoryFormat("table", false, true),
 				Trunc:  true,
 				Output: out,
 			},
@@ -246,7 +245,7 @@ imageID6   17 years ago   /bin/bash echo                                  183MB 
 		},
 		{
 			formatter.Context{
-				Format: NewHistoryFormat("table", false, true),
+				Format: newHistoryFormat("table", false, true),
 				Trunc:  false,
 				Output: out,
 			},
@@ -256,7 +255,7 @@ imageID6   17 years ago   /bin/bash echo                                  183MB 
 
 	for _, tc := range cases {
 		t.Run(string(tc.context.Format), func(t *testing.T) {
-			err := HistoryWrite(tc.context, true, histories)
+			err := historyWrite(tc.context, true, histories)
 			assert.NilError(t, err)
 			assert.Equal(t, out.String(), tc.expected)
 			// Clean buffer

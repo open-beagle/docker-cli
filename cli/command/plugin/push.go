@@ -8,8 +8,8 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/trust"
 	"github.com/docker/cli/internal/jsonstream"
+	"github.com/docker/cli/internal/registry"
 	registrytypes "github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/registry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,7 @@ func newPushCommand(dockerCli command.Cli) *cobra.Command {
 
 	flags := cmd.Flags()
 
-	command.AddTrustSigningFlags(flags, &opts.untrusted, dockerCli.ContentTrustEnabled())
+	flags.BoolVar(&opts.untrusted, "disable-content-trust", !trust.Enabled(), "Skip image signing")
 
 	return cmd
 }
@@ -49,8 +49,8 @@ func runPush(ctx context.Context, dockerCli command.Cli, opts pushOptions) error
 
 	named = reference.TagNameOnly(named)
 
-	repoInfo, _ := registry.ParseRepositoryInfo(named)
-	authConfig := command.ResolveAuthConfig(dockerCli.ConfigFile(), repoInfo.Index)
+	indexInfo := registry.NewIndexInfo(named)
+	authConfig := command.ResolveAuthConfig(dockerCli.ConfigFile(), indexInfo)
 	encodedAuth, err := registrytypes.EncodeAuthConfig(authConfig)
 	if err != nil {
 		return err
@@ -60,9 +60,15 @@ func runPush(ctx context.Context, dockerCli command.Cli, opts pushOptions) error
 	if err != nil {
 		return err
 	}
-	defer responseBody.Close()
+	defer func() {
+		_ = responseBody.Close()
+	}()
 
 	if !opts.untrusted {
+		repoInfo := &trust.RepositoryInfo{
+			Name:  reference.TrimNamed(named),
+			Index: indexInfo,
+		}
 		return trust.PushTrustedReference(ctx, dockerCli, repoInfo, named, authConfig, responseBody, command.UserAgent())
 	}
 

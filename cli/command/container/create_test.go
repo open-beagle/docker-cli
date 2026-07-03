@@ -116,7 +116,7 @@ func TestCreateContainerImagePullPolicy(t *testing.T) {
 		t.Run(tc.PullPolicy, func(t *testing.T) {
 			pullCounter := 0
 
-			client := &fakeClient{
+			apiClient := &fakeClient{
 				createContainerFunc: func(
 					config *container.Config,
 					hostConfig *container.HostConfig,
@@ -140,7 +140,7 @@ func TestCreateContainerImagePullPolicy(t *testing.T) {
 					return system.Info{IndexServerAddress: "https://indexserver.example.com"}, nil
 				},
 			}
-			fakeCLI := test.NewFakeCli(client)
+			fakeCLI := test.NewFakeCli(apiClient)
 			id, err := createContainer(context.Background(), fakeCLI, config, &createOptions{
 				name:      "name",
 				platform:  runtime.GOOS,
@@ -206,7 +206,7 @@ func TestCreateContainerValidateFlags(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := NewCreateCommand(test.NewFakeCli(&fakeClient{}))
+			cmd := newCreateCommand(test.NewFakeCli(&fakeClient{}))
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
 			cmd.SetArgs(tc.args)
@@ -249,6 +249,7 @@ func TestNewCreateCommandWithContentTrustErrors(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("DOCKER_CONTENT_TRUST", "true")
 			fakeCLI := test.NewFakeCli(&fakeClient{
 				createContainerFunc: func(config *container.Config,
 					hostConfig *container.HostConfig,
@@ -258,9 +259,9 @@ func TestNewCreateCommandWithContentTrustErrors(t *testing.T) {
 				) (container.CreateResponse, error) {
 					return container.CreateResponse{}, errors.New("shouldn't try to pull image")
 				},
-			}, test.EnableContentTrust)
+			})
 			fakeCLI.SetNotaryClient(tc.notaryFunc)
-			cmd := NewCreateCommand(fakeCLI)
+			cmd := newCreateCommand(fakeCLI)
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
 			cmd.SetArgs(tc.args)
@@ -314,7 +315,7 @@ func TestNewCreateCommandWithWarnings(t *testing.T) {
 					return container.CreateResponse{Warnings: tc.warnings}, nil
 				},
 			})
-			cmd := NewCreateCommand(fakeCLI)
+			cmd := newCreateCommand(fakeCLI)
 			cmd.SetOut(io.Discard)
 			cmd.SetArgs(tc.args)
 			err := cmd.Execute()
@@ -366,7 +367,7 @@ func TestCreateContainerWithProxyConfig(t *testing.T) {
 			},
 		},
 	})
-	cmd := NewCreateCommand(fakeCLI)
+	cmd := newCreateCommand(fakeCLI)
 	cmd.SetOut(io.Discard)
 	cmd.SetArgs([]string{"image:tag"})
 	err := cmd.Execute()

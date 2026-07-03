@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli"
@@ -31,7 +30,7 @@ func newUpgradeCommand(dockerCli command.Cli) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	loadPullFlags(dockerCli, &options, flags)
+	loadPullFlags(&options, flags)
 	flags.BoolVar(&options.skipRemoteCheck, "skip-remote-check", false, "Do not check if specified remote plugin matches existing plugin image")
 	return cmd
 }
@@ -73,19 +72,18 @@ func runUpgrade(ctx context.Context, dockerCLI command.Cli, opts pluginOptions) 
 		}
 	}
 
-	options, err := buildPullConfig(ctx, dockerCLI, opts, "plugin upgrade")
+	options, err := buildPullConfig(ctx, dockerCLI, opts)
 	if err != nil {
 		return err
 	}
 
 	responseBody, err := dockerCLI.Client().PluginUpgrade(ctx, opts.localName, options)
 	if err != nil {
-		if strings.Contains(err.Error(), "target is image") {
-			return errors.New(err.Error() + " - Use `docker image pull`")
-		}
 		return err
 	}
-	defer responseBody.Close()
+	defer func() {
+		_ = responseBody.Close()
+	}()
 	if err := jsonstream.Display(ctx, responseBody, dockerCLI.Out()); err != nil {
 		return err
 	}

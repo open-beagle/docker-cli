@@ -8,7 +8,6 @@ import (
 	"github.com/distribution/reference"
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-units"
 )
 
@@ -24,7 +23,14 @@ const (
 )
 
 // NewTaskFormat returns a Format for rendering using a task Context
+//
+// Deprecated: this function was only used internally and will be removed in the next release.
 func NewTaskFormat(source string, quiet bool) formatter.Format {
+	return newTaskFormat(source, quiet)
+}
+
+// newTaskFormat returns a Format for rendering using a taskContext.
+func newTaskFormat(source string, quiet bool) formatter.Format {
 	switch source {
 	case formatter.TableFormatKey:
 		if quiet {
@@ -41,10 +47,17 @@ func NewTaskFormat(source string, quiet bool) formatter.Format {
 }
 
 // FormatWrite writes the context
-func FormatWrite(ctx formatter.Context, tasks []swarm.Task, names map[string]string, nodes map[string]string) error {
+//
+// Deprecated: this function was only used internally and will be removed in the next release.
+func FormatWrite(fmtCtx formatter.Context, tasks []swarm.Task, names map[string]string, nodes map[string]string) error {
+	return formatWrite(fmtCtx, tasks, names, nodes)
+}
+
+// formatWrite writes the context.
+func formatWrite(fmtCtx formatter.Context, tasks []swarm.Task, names map[string]string, nodes map[string]string) error {
 	render := func(format func(subContext formatter.SubContext) error) error {
 		for _, task := range tasks {
-			taskCtx := &taskContext{trunc: ctx.Trunc, task: task, name: names[task.ID], node: nodes[task.ID]}
+			taskCtx := &taskContext{trunc: fmtCtx.Trunc, task: task, name: names[task.ID], node: nodes[task.ID]}
 			if err := format(taskCtx); err != nil {
 				return err
 			}
@@ -62,7 +75,7 @@ func FormatWrite(ctx formatter.Context, tasks []swarm.Task, names map[string]str
 		"Error":        formatter.ErrorHeader,
 		"Ports":        formatter.PortsHeader,
 	}
-	return ctx.Write(&taskCtx, render)
+	return fmtCtx.Write(&taskCtx, render)
 }
 
 type taskContext struct {
@@ -79,7 +92,7 @@ func (c *taskContext) MarshalJSON() ([]byte, error) {
 
 func (c *taskContext) ID() string {
 	if c.trunc {
-		return stringid.TruncateID(c.task.ID)
+		return formatter.TruncateID(c.task.ID)
 	}
 	return c.task.ID
 }

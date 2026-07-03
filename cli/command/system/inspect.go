@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	cerrdefs "github.com/containerd/errdefs"
+	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
@@ -60,7 +60,14 @@ type inspectOptions struct {
 }
 
 // NewInspectCommand creates a new cobra.Command for `docker inspect`
-func NewInspectCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewInspectCommand(dockerCLI command.Cli) *cobra.Command {
+	return newInspectCommand(dockerCLI)
+}
+
+// newInspectCommand creates a new cobra.Command for `docker inspect`
+func newInspectCommand(dockerCLI command.Cli) *cobra.Command {
 	var opts inspectOptions
 
 	cmd := &cobra.Command{
@@ -72,10 +79,10 @@ func NewInspectCommand(dockerCli command.Cli) *cobra.Command {
 			if cmd.Flags().Changed("type") && opts.objectType == "" {
 				return fmt.Errorf(`type is empty: must be one of "%s"`, strings.Join(allTypes, `", "`))
 			}
-			return runInspect(cmd.Context(), dockerCli, opts)
+			return runInspect(cmd.Context(), dockerCLI, opts)
 		},
 		// TODO(thaJeztah): should we consider adding completion for common object-types? (images, containers?)
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -88,7 +95,7 @@ func NewInspectCommand(dockerCli command.Cli) *cobra.Command {
 		// Set a default completion function if none was set. We don't look
 		// up if it does already have one set, because Cobra does this for
 		// us, and returns an error (which we ignore for this reason).
-		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, cobra.NoFileCompletions)
 	})
 	return cmd
 }
@@ -279,7 +286,7 @@ func inspectAll(ctx context.Context, dockerCLI command.Cli, getSize bool, typeCo
 }
 
 func isErrSkippable(err error) bool {
-	return cerrdefs.IsNotFound(err) ||
+	return errdefs.IsNotFound(err) ||
 		strings.Contains(err.Error(), "not supported") ||
 		strings.Contains(err.Error(), "invalid reference format")
 }

@@ -3,11 +3,11 @@
 <https://github.com/docker/cli>
 
 ```bash
-git remote add upstream git@github.com:docker/cli.git
+git -C ansible-docker-cli remote add upstream git@github.com:docker/cli.git
 
-git fetch upstream
+git -C ansible-docker-cli fetch upstream
 
-git merge v28.2.2
+git -C ansible-docker-cli merge v28.5.1
 ```
 
 ## build
@@ -15,13 +15,14 @@ git merge v28.2.2
 ```bash
 # cross
 docker run -it \
---rm \
--v $PWD/:/go/src/github.com/docker/cli \
--w /go/src/github.com/docker/cli \
--e VERSION=28.2.2-beagle \
--e PLATFORM="© 2018 BeagleCloud Team" \
-registry.cn-qingdao.aliyuncs.com/wod/golang:1.24-bookworm \
-bash .beagle/build.sh
+  --rm \
+  -v $PWD/:/go/src/github.com/docker/ \
+  -v $PWD/ansible-docker-cli:/go/src/github.com/docker/cli \
+  -w /go/src/github.com/docker/cli \
+  -e VERSION=28.5.1-beagle \
+  -e PLATFORM="© 2018 BeagleCloud Team" \
+  registry.cn-qingdao.aliyuncs.com/wod/golang:1.24-bookworm \
+  bash .beagle/build.sh
 ```
 
 ## test

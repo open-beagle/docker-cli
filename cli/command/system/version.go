@@ -10,7 +10,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/command/formatter/tabwriter"
 	flagsHelper "github.com/docker/cli/cli/flags"
@@ -109,7 +108,14 @@ func newClientVersion(contextName string, dockerCli command.Cli) clientVersion {
 }
 
 // NewVersionCommand creates a new cobra.Command for `docker version`
-func NewVersionCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewVersionCommand(dockerCLI command.Cli) *cobra.Command {
+	return newVersionCommand(dockerCLI)
+}
+
+// newVersionCommand creates a new cobra.Command for `docker version`
+func newVersionCommand(dockerCLI command.Cli) *cobra.Command {
 	var opts versionOptions
 
 	cmd := &cobra.Command{
@@ -117,12 +123,12 @@ func NewVersionCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Show the Docker version information",
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runVersion(cmd.Context(), dockerCli, &opts)
+			return runVersion(cmd.Context(), dockerCLI, &opts)
 		},
 		Annotations: map[string]string{
 			"category-top": "10",
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	cmd.Flags().StringVarP(&opts.format, "format", "f", "", flagsHelper.InspectFormatHelp)
@@ -209,8 +215,7 @@ func newVersionTemplate(templateFormat string) (*template.Template, error) {
 	case formatter.JSONFormatKey:
 		templateFormat = formatter.JSONFormat
 	}
-	tmpl := templates.New("version").Funcs(template.FuncMap{"getDetailsOrder": getDetailsOrder})
-	tmpl, err := tmpl.Parse(templateFormat)
+	tmpl, err := templates.New("version").Funcs(template.FuncMap{"getDetailsOrder": getDetailsOrder}).Parse(templateFormat)
 	if err != nil {
 		return nil, errors.Wrap(err, "template parsing error")
 	}

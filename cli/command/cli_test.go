@@ -18,6 +18,7 @@ import (
 
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
@@ -188,16 +189,16 @@ func TestInitializeFromClient(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.doc, func(t *testing.T) {
-			apiclient := &fakeClient{
+			apiClient := &fakeClient{
 				pingFunc: tc.pingFunc,
 				version:  defaultVersion,
 			}
 
-			cli := &DockerCli{client: apiclient}
+			cli := &DockerCli{client: apiClient}
 			err := cli.Initialize(flags.NewClientOptions())
 			assert.NilError(t, err)
 			assert.DeepEqual(t, cli.ServerInfo(), tc.expectedServer)
-			assert.Equal(t, apiclient.negotiated, tc.negotiated)
+			assert.Equal(t, apiClient.negotiated, tc.negotiated)
 		})
 	}
 }
@@ -352,4 +353,47 @@ func TestHooksEnabled(t *testing.T) {
 		assert.NilError(t, err)
 		assert.Check(t, !cli.HooksEnabled())
 	})
+}
+
+func TestSetGoDebug(t *testing.T) {
+	t.Run("GODEBUG already set", func(t *testing.T) {
+		t.Setenv("GODEBUG", "val1,val2")
+		meta := store.Metadata{}
+		setGoDebug(meta)
+		assert.Equal(t, "val1,val2", os.Getenv("GODEBUG"))
+	})
+	t.Run("GODEBUG in context metadata can set env", func(t *testing.T) {
+		meta := store.Metadata{
+			Metadata: DockerContext{
+				AdditionalFields: map[string]any{
+					"GODEBUG": "val1,val2=1",
+				},
+			},
+		}
+		setGoDebug(meta)
+		assert.Equal(t, "val1,val2=1", os.Getenv("GODEBUG"))
+	})
+}
+
+func TestNewDockerCliWithCustomUserAgent(t *testing.T) {
+	var received string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received = r.UserAgent()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+	host := strings.Replace(ts.URL, "http://", "tcp://", 1)
+	opts := &flags.ClientOptions{Hosts: []string{host}}
+
+	cli, err := NewDockerCli(
+		WithUserAgent("fake-agent/0.0.1"),
+	)
+	assert.NilError(t, err)
+	cli.currentContext = DefaultContextName
+	cli.options = opts
+	cli.configFile = &configfile.ConfigFile{}
+
+	_, err = cli.Client().Ping(context.Background())
+	assert.NilError(t, err)
+	assert.DeepEqual(t, received, "fake-agent/0.0.1")
 }

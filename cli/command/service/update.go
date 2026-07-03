@@ -112,9 +112,9 @@ func newUpdateCommand(dockerCLI command.Cli) *cobra.Command {
 
 	// Add needs parsing, Remove only needs the key
 	flags.Var(newListOptsVar(), flagGenericResourcesRemove, "Remove a Generic resource")
-	flags.SetAnnotation(flagHostAdd, "version", []string{"1.32"})
+	flags.SetAnnotation(flagGenericResourcesRemove, "version", []string{"1.32"})
 	flags.Var(newListOptsVarWithValidator(ValidateSingleGenericResource), flagGenericResourcesAdd, "Add a Generic resource")
-	flags.SetAnnotation(flagHostAdd, "version", []string{"1.32"})
+	flags.SetAnnotation(flagGenericResourcesAdd, "version", []string{"1.32"})
 
 	// TODO(thaJeztah): add completion for capabilities, stop-signal (currently non-exported in container package)
 	// _ = cmd.RegisterFlagCompletionFunc(flagCapAdd, completeLinuxCapabilityNames)
@@ -137,7 +137,7 @@ func newUpdateCommand(dockerCLI command.Cli) *cobra.Command {
 		// Set a default completion function if none was set. We don't look
 		// up if it does already have one set, because Cobra does this for
 		// us, and returns an error (which we ignore for this reason).
-		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, cobra.NoFileCompletions)
 	})
 
 	return cmd

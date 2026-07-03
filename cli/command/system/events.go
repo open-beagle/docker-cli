@@ -11,7 +11,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/opts"
@@ -28,7 +27,14 @@ type eventsOptions struct {
 }
 
 // NewEventsCommand creates a new cobra.Command for `docker events`
-func NewEventsCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewEventsCommand(dockerCLI command.Cli) *cobra.Command {
+	return newEventsCommand(dockerCLI)
+}
+
+// newEventsCommand creates a new cobra.Command for `docker events`
+func newEventsCommand(dockerCLI command.Cli) *cobra.Command {
 	options := eventsOptions{filter: opts.NewFilterOpt()}
 
 	cmd := &cobra.Command{
@@ -36,12 +42,12 @@ func NewEventsCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Get real time events from the server",
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runEvents(cmd.Context(), dockerCli, &options)
+			return runEvents(cmd.Context(), dockerCLI, &options)
 		},
 		Annotations: map[string]string{
 			"aliases": "docker system events, docker events",
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -50,12 +56,12 @@ func NewEventsCommand(dockerCli command.Cli) *cobra.Command {
 	flags.VarP(&options.filter, "filter", "f", "Filter output based on conditions provided")
 	flags.StringVar(&options.format, "format", "", flagsHelper.InspectFormatHelp) // using the same flag description as "inspect" commands for now.
 
-	_ = cmd.RegisterFlagCompletionFunc("filter", completeEventFilters(dockerCli))
+	_ = cmd.RegisterFlagCompletionFunc("filter", completeEventFilters(dockerCLI))
 
 	return cmd
 }
 
-func runEvents(ctx context.Context, dockerCli command.Cli, options *eventsOptions) error {
+func runEvents(ctx context.Context, dockerCLI command.Cli, options *eventsOptions) error {
 	tmpl, err := makeTemplate(options.format)
 	if err != nil {
 		return cli.StatusError{
@@ -64,14 +70,14 @@ func runEvents(ctx context.Context, dockerCli command.Cli, options *eventsOption
 		}
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	evts, errs := dockerCli.Client().Events(ctx, events.ListOptions{
+	evts, errs := dockerCLI.Client().Events(ctx, events.ListOptions{
 		Since:   options.since,
 		Until:   options.until,
 		Filters: options.filter.Value(),
 	})
 	defer cancel()
 
-	out := dockerCli.Out()
+	out := dockerCLI.Out()
 
 	for {
 		select {

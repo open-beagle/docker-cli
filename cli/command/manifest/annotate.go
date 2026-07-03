@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/manifest/store"
-	registryclient "github.com/docker/cli/cli/registry/client"
+	"github.com/docker/cli/internal/registryclient"
 	"github.com/docker/docker/api/types/registry"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -54,6 +55,7 @@ func newRegistryClient(dockerCLI command.Cli, allowInsecure bool) registryclient
 	resolver := func(ctx context.Context, index *registry.IndexInfo) registry.AuthConfig {
 		return command.ResolveAuthConfig(dockerCLI.ConfigFile(), index)
 	}
+	// FIXME(thaJeztah): this should use the userAgent as configured on the dockerCLI.
 	return registryclient.NewRegistryClient(resolver, command.UserAgent(), allowInsecure)
 }
 
@@ -96,7 +98,7 @@ func runManifestAnnotate(dockerCLI command.Cli, opts annotateOptions) error {
 	manifestStore := newManifestStore(dockerCLI)
 	imageManifest, err := manifestStore.Get(targetRef, imgRef)
 	switch {
-	case store.IsNotFound(err):
+	case errdefs.IsNotFound(err):
 		return fmt.Errorf("manifest for image %s does not exist in %s", opts.image, opts.target)
 	case err != nil:
 		return err

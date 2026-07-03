@@ -7,10 +7,9 @@ import (
 	"context"
 	"strings"
 
-	cerrdefs "github.com/containerd/errdefs"
+	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/api/types/network"
@@ -52,13 +51,13 @@ func newInspectCommand(dockerCli command.Cli) *cobra.Command {
 		// Set a default completion function if none was set. We don't look
 		// up if it does already have one set, because Cobra does this for
 		// us, and returns an error (which we ignore for this reason).
-		_ = cmd.RegisterFlagCompletionFunc(flag.Name, completion.NoComplete)
+		_ = cmd.RegisterFlagCompletionFunc(flag.Name, cobra.NoFileCompletions)
 	})
 	return cmd
 }
 
-func runInspect(ctx context.Context, dockerCli command.Cli, opts inspectOptions) error {
-	client := dockerCli.Client()
+func runInspect(ctx context.Context, dockerCLI command.Cli, opts inspectOptions) error {
+	apiClient := dockerCLI.Client()
 
 	if opts.pretty {
 		opts.format = "pretty"
@@ -66,16 +65,16 @@ func runInspect(ctx context.Context, dockerCli command.Cli, opts inspectOptions)
 
 	getRef := func(ref string) (any, []byte, error) {
 		// Service inspect shows defaults values in empty fields.
-		service, _, err := client.ServiceInspectWithRaw(ctx, ref, swarm.ServiceInspectOptions{InsertDefaults: true})
-		if err == nil || !cerrdefs.IsNotFound(err) {
+		service, _, err := apiClient.ServiceInspectWithRaw(ctx, ref, swarm.ServiceInspectOptions{InsertDefaults: true})
+		if err == nil || !errdefs.IsNotFound(err) {
 			return service, nil, err
 		}
 		return nil, nil, errors.Errorf("Error: no such service: %s", ref)
 	}
 
 	getNetwork := func(ref string) (any, []byte, error) {
-		nw, _, err := client.NetworkInspectWithRaw(ctx, ref, network.InspectOptions{Scope: "swarm"})
-		if err == nil || !cerrdefs.IsNotFound(err) {
+		nw, _, err := apiClient.NetworkInspectWithRaw(ctx, ref, network.InspectOptions{Scope: "swarm"})
+		if err == nil || !errdefs.IsNotFound(err) {
 			return nw, nil, err
 		}
 		return nil, nil, errors.Errorf("Error: no such network: %s", ref)
@@ -84,8 +83,8 @@ func runInspect(ctx context.Context, dockerCli command.Cli, opts inspectOptions)
 	f := opts.format
 	if len(f) == 0 {
 		f = "raw"
-		if len(dockerCli.ConfigFile().ServiceInspectFormat) > 0 {
-			f = dockerCli.ConfigFile().ServiceInspectFormat
+		if len(dockerCLI.ConfigFile().ServiceInspectFormat) > 0 {
+			f = dockerCLI.ConfigFile().ServiceInspectFormat
 		}
 	}
 
@@ -96,11 +95,11 @@ func runInspect(ctx context.Context, dockerCli command.Cli, opts inspectOptions)
 	}
 
 	serviceCtx := formatter.Context{
-		Output: dockerCli.Out(),
-		Format: NewFormat(f),
+		Output: dockerCLI.Out(),
+		Format: newFormat(f),
 	}
 
-	if err := InspectFormatWrite(serviceCtx, opts.refs, getRef, getNetwork); err != nil {
+	if err := inspectFormatWrite(serviceCtx, opts.refs, getRef, getNetwork); err != nil {
 		return cli.StatusError{StatusCode: 1, Status: err.Error()}
 	}
 	return nil

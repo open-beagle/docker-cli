@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/docker/cli/cli"
@@ -75,8 +76,7 @@ TWO=2
 		{
 			options: withDefaultOpts(ExecOptions{Detach: true}),
 			expected: container.ExecOptions{
-				Detach: true,
-				Cmd:    []string{"command"},
+				Cmd: []string{"command"},
 			},
 		},
 		{
@@ -86,9 +86,8 @@ TWO=2
 				Detach:      true,
 			}),
 			expected: container.ExecOptions{
-				Detach: true,
-				Tty:    true,
-				Cmd:    []string{"command"},
+				Tty: true,
+				Cmd: []string{"command"},
 			},
 		},
 		{
@@ -97,7 +96,6 @@ TWO=2
 			expected: container.ExecOptions{
 				Cmd:        []string{"command"},
 				DetachKeys: "de",
-				Detach:     true,
 			},
 		},
 		{
@@ -109,7 +107,6 @@ TWO=2
 			expected: container.ExecOptions{
 				Cmd:        []string{"command"},
 				DetachKeys: "ab",
-				Detach:     true,
 			},
 		},
 		{
@@ -141,10 +138,12 @@ TWO=2
 		},
 	}
 
-	for _, testcase := range testcases {
-		execConfig, err := parseExec(testcase.options, &testcase.configFile)
-		assert.NilError(t, err)
-		assert.Check(t, is.DeepEqual(testcase.expected, *execConfig))
+	for i, testcase := range testcases {
+		t.Run("test "+strconv.Itoa(i+1), func(t *testing.T) {
+			execConfig, err := parseExec(testcase.options, &testcase.configFile)
+			assert.NilError(t, err)
+			assert.Check(t, is.DeepEqual(testcase.expected, *execConfig))
+		})
 	}
 }
 
@@ -235,13 +234,13 @@ func TestGetExecExitStatus(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		client := &fakeClient{
+		apiClient := &fakeClient{
 			execInspectFunc: func(id string) (container.ExecInspect, error) {
 				assert.Check(t, is.Equal(execID, id))
 				return container.ExecInspect{ExitCode: testcase.exitCode}, testcase.inspectError
 			},
 		}
-		err := getExecExitStatus(context.Background(), client, execID)
+		err := getExecExitStatus(context.Background(), apiClient, execID)
 		assert.Check(t, is.Equal(testcase.expectedError, err))
 	}
 }
@@ -264,7 +263,7 @@ func TestNewExecCommandErrors(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		fakeCLI := test.NewFakeCli(&fakeClient{inspectFunc: tc.containerInspectFunc})
-		cmd := NewExecCommand(fakeCLI)
+		cmd := newExecCommand(fakeCLI)
 		cmd.SetOut(io.Discard)
 		cmd.SetArgs(tc.args)
 		assert.ErrorContains(t, cmd.Execute(), tc.expectedError)

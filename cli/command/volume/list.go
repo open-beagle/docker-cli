@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/opts"
@@ -37,7 +36,7 @@ func newListCommand(dockerCli command.Cli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runList(cmd.Context(), dockerCli, options)
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -51,17 +50,17 @@ func newListCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runList(ctx context.Context, dockerCli command.Cli, options listOptions) error {
-	client := dockerCli.Client()
-	volumes, err := client.VolumeList(ctx, volume.ListOptions{Filters: options.filter.Value()})
+func runList(ctx context.Context, dockerCLI command.Cli, options listOptions) error {
+	apiClient := dockerCLI.Client()
+	volumes, err := apiClient.VolumeList(ctx, volume.ListOptions{Filters: options.filter.Value()})
 	if err != nil {
 		return err
 	}
 
 	format := options.format
 	if len(format) == 0 && !options.cluster {
-		if len(dockerCli.ConfigFile().VolumesFormat) > 0 && !options.quiet {
-			format = dockerCli.ConfigFile().VolumesFormat
+		if len(dockerCLI.ConfigFile().VolumesFormat) > 0 && !options.quiet {
+			format = dockerCLI.ConfigFile().VolumesFormat
 		} else {
 			format = formatter.TableFormatKey
 		}
@@ -90,7 +89,7 @@ func runList(ctx context.Context, dockerCli command.Cli, options listOptions) er
 	})
 
 	volumeCtx := formatter.Context{
-		Output: dockerCli.Out(),
+		Output: dockerCLI.Out(),
 		Format: formatter.NewVolumeFormat(format, options.quiet),
 	}
 	return formatter.VolumeWrite(volumeCtx, volumes.Volumes)

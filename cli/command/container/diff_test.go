@@ -36,7 +36,7 @@ func TestRunDiff(t *testing.T) {
 		},
 	})
 
-	cmd := NewDiffCommand(cli)
+	cmd := newDiffCommand(cli)
 	cmd.SetOut(io.Discard)
 
 	cmd.SetArgs([]string{"container-id"})
@@ -68,7 +68,7 @@ func TestRunDiffClientError(t *testing.T) {
 		},
 	})
 
-	cmd := NewDiffCommand(cli)
+	cmd := newDiffCommand(cli)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -76,18 +76,4 @@ func TestRunDiffClientError(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.ErrorIs(t, err, clientError)
-}
-
-func TestRunDiffEmptyContainerError(t *testing.T) {
-	cli := test.NewFakeCli(&fakeClient{})
-
-	cmd := NewDiffCommand(cli)
-	cmd.SetOut(io.Discard)
-	cmd.SetErr(io.Discard)
-
-	containerID := ""
-	cmd.SetArgs([]string{containerID})
-
-	err := cmd.Execute()
-	assert.Error(t, err, "Container name cannot be empty")
 }

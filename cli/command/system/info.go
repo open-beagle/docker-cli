@@ -14,16 +14,15 @@ import (
 	"github.com/docker/cli/cli"
 	pluginmanager "github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	"github.com/docker/cli/cli/debug"
 	flagsHelper "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/internal/lazyregexp"
+	"github.com/docker/cli/internal/registry"
 	"github.com/docker/cli/templates"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/registry"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
 )
@@ -60,7 +59,14 @@ func (i *dockerInfo) clientPlatform() string {
 }
 
 // NewInfoCommand creates a new cobra.Command for `docker info`
-func NewInfoCommand(dockerCli command.Cli) *cobra.Command {
+//
+// Deprecated: Do not import commands directly. They will be removed in a future release.
+func NewInfoCommand(dockerCLI command.Cli) *cobra.Command {
+	return newInfoCommand(dockerCLI)
+}
+
+// newInfoCommand creates a new cobra.Command for `docker info`
+func newInfoCommand(dockerCLI command.Cli) *cobra.Command {
 	var opts infoOptions
 
 	cmd := &cobra.Command{
@@ -68,13 +74,13 @@ func NewInfoCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Display system-wide information",
 		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runInfo(cmd.Context(), cmd, dockerCli, &opts)
+			return runInfo(cmd.Context(), cmd, dockerCLI, &opts)
 		},
 		Annotations: map[string]string{
 			"category-top": "12",
 			"aliases":      "docker system info, docker info",
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	cmd.Flags().StringVarP(&opts.format, "format", "f", "", flagsHelper.InspectFormatHelp)
@@ -162,7 +168,7 @@ func needsServerInfo(template string, info dockerInfo) bool {
 	}
 
 	// A template is provided and has at least one field set.
-	tmpl, err := templates.NewParse("", template)
+	tmpl, err := templates.Parse(template)
 	if err != nil {
 		// ignore parsing errors here, and let regular code handle them
 		return true

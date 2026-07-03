@@ -6,7 +6,6 @@ import (
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/cli/command/completion"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +27,7 @@ func newLeaveCommand(dockerCli command.Cli) *cobra.Command {
 			"version": "1.24",
 			"swarm":   "active",
 		},
-		ValidArgsFunction: completion.NoComplete,
+		ValidArgsFunction: cobra.NoFileCompletions,
 	}
 
 	flags := cmd.Flags()
@@ -36,13 +35,13 @@ func newLeaveCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runLeave(ctx context.Context, dockerCli command.Cli, opts leaveOptions) error {
-	client := dockerCli.Client()
+func runLeave(ctx context.Context, dockerCLI command.Cli, opts leaveOptions) error {
+	apiClient := dockerCLI.Client()
 
-	if err := client.SwarmLeave(ctx, opts.force); err != nil {
+	if err := apiClient.SwarmLeave(ctx, opts.force); err != nil {
 		return err
 	}
 
-	fmt.Fprintln(dockerCli.Out(), "Node left the swarm.")
+	_, _ = fmt.Fprintln(dockerCLI.Out(), "Node left the swarm.")
 	return nil
 }

@@ -14,13 +14,12 @@ import (
 	"github.com/docker/cli/internal/test"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/pkg/stringid"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestNodeContext(t *testing.T) {
-	nodeID := stringid.GenerateRandomID()
+	nodeID := test.RandomID()
 
 	var ctx nodeContext
 	cases := []struct {
@@ -75,7 +74,7 @@ func TestNodeContextWrite(t *testing.T) {
 		},
 		// Table format
 		{
-			context: formatter.Context{Format: NewFormat("table", false)},
+			context: formatter.Context{Format: newFormat("table", false)},
 			expected: `ID          HOSTNAME     STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
 nodeID1     foobar_baz   Foo       Drain          Leader           18.03.0-ce
 nodeID2     foobar_bar   Bar       Active         Reachable        1.2.3
@@ -83,7 +82,7 @@ nodeID3     foobar_boo   Boo       Active                          ` + "\n", // 
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{
-			context: formatter.Context{Format: NewFormat("table", true)},
+			context: formatter.Context{Format: newFormat("table", true)},
 			expected: `nodeID1
 nodeID2
 nodeID3
@@ -91,7 +90,7 @@ nodeID3
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{
-			context: formatter.Context{Format: NewFormat("table {{.Hostname}}", false)},
+			context: formatter.Context{Format: newFormat("table {{.Hostname}}", false)},
 			expected: `HOSTNAME
 foobar_baz
 foobar_bar
@@ -100,7 +99,7 @@ foobar_boo
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{
-			context: formatter.Context{Format: NewFormat("table {{.Hostname}}", true)},
+			context: formatter.Context{Format: newFormat("table {{.Hostname}}", true)},
 			expected: `HOSTNAME
 foobar_baz
 foobar_bar
@@ -109,7 +108,7 @@ foobar_boo
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{
-			context: formatter.Context{Format: NewFormat("table {{.ID}}\t{{.Hostname}}\t{{.TLSStatus}}", false)},
+			context: formatter.Context{Format: newFormat("table {{.ID}}\t{{.Hostname}}\t{{.TLSStatus}}", false)},
 			expected: `ID        HOSTNAME     TLS STATUS
 nodeID1   foobar_baz   Needs Rotation
 nodeID2   foobar_bar   Ready
@@ -118,7 +117,7 @@ nodeID3   foobar_boo   Unknown
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{ // no cluster TLS status info, TLS status for all nodes is unknown
-			context: formatter.Context{Format: NewFormat("table {{.ID}}\t{{.Hostname}}\t{{.TLSStatus}}", false)},
+			context: formatter.Context{Format: newFormat("table {{.ID}}\t{{.Hostname}}\t{{.TLSStatus}}", false)},
 			expected: `ID        HOSTNAME     TLS STATUS
 nodeID1   foobar_baz   Unknown
 nodeID2   foobar_bar   Unknown
@@ -128,7 +127,7 @@ nodeID3   foobar_boo   Unknown
 		},
 		// Raw Format
 		{
-			context: formatter.Context{Format: NewFormat("raw", false)},
+			context: formatter.Context{Format: newFormat("raw", false)},
 			expected: `node_id: nodeID1
 hostname: foobar_baz
 status: Foo
@@ -149,7 +148,7 @@ manager_status: ` + "\n\n", // to preserve whitespace
 			clusterInfo: swarm.ClusterInfo{TLSInfo: swarm.TLSInfo{TrustRoot: "hi"}},
 		},
 		{
-			context: formatter.Context{Format: NewFormat("raw", true)},
+			context: formatter.Context{Format: newFormat("raw", true)},
 			expected: `node_id: nodeID1
 node_id: nodeID2
 node_id: nodeID3
@@ -158,7 +157,7 @@ node_id: nodeID3
 		},
 		// Custom Format
 		{
-			context: formatter.Context{Format: NewFormat("{{.Hostname}}  {{.TLSStatus}}", false)},
+			context: formatter.Context{Format: newFormat("{{.Hostname}}  {{.TLSStatus}}", false)},
 			expected: `foobar_baz  Needs Rotation
 foobar_bar  Ready
 foobar_boo  Unknown
@@ -206,7 +205,7 @@ foobar_boo  Unknown
 			var out bytes.Buffer
 			tc.context.Output = &out
 
-			err := FormatWrite(tc.context, nodes, system.Info{Swarm: swarm.Info{Cluster: &tc.clusterInfo}})
+			err := formatWrite(tc.context, nodes, system.Info{Swarm: swarm.Info{Cluster: &tc.clusterInfo}})
 			if err != nil {
 				assert.Error(t, err, tc.expected)
 			} else {
@@ -253,7 +252,7 @@ func TestNodeContextWriteJSON(t *testing.T) {
 			{ID: "nodeID3", Description: swarm.NodeDescription{Hostname: "foobar_boo", Engine: swarm.EngineDescription{EngineVersion: "18.03.0-ce"}}},
 		}
 		out := bytes.NewBufferString("")
-		err := FormatWrite(formatter.Context{Format: "{{json .}}", Output: out}, nodes, testcase.info)
+		err := formatWrite(formatter.Context{Format: "{{json .}}", Output: out}, nodes, testcase.info)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -273,7 +272,7 @@ func TestNodeContextWriteJSONField(t *testing.T) {
 		{ID: "nodeID2", Description: swarm.NodeDescription{Hostname: "foobar_bar"}},
 	}
 	out := bytes.NewBufferString("")
-	err := FormatWrite(formatter.Context{Format: "{{json .ID}}", Output: out}, nodes, system.Info{})
+	err := formatWrite(formatter.Context{Format: "{{json .ID}}", Output: out}, nodes, system.Info{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,10 +317,10 @@ func TestNodeInspectWriteContext(t *testing.T) {
 	}
 	out := bytes.NewBufferString("")
 	context := formatter.Context{
-		Format: NewFormat("pretty", false),
+		Format: newFormat("pretty", false),
 		Output: out,
 	}
-	err := InspectFormatWrite(context, []string{"nodeID1"}, func(string) (any, []byte, error) {
+	err := inspectFormatWrite(context, []string{"nodeID1"}, func(string) (any, []byte, error) {
 		return node, nil, nil
 	})
 	if err != nil {
